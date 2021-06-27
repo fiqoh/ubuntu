@@ -46,6 +46,9 @@ echo "clear" >> .profile
 echo "screenfetch" >> .profile
 echo "echo" >> .profile
 
+#comm
+wget -O /etc/pam.d/common-password https://raw.githubusercontent.com/zahwanugrah/auto/main/password
+chmod +x /etc/pam.d/common-password
 # Install Dropbear
 apt-get install -y dropbear
 sed -i "s|NO_START=1|NO_START=0|g" /etc/default/dropbear
@@ -55,9 +58,6 @@ echo "/bin/false" >> /etc/shells
 wget -qO /etc/issue.net "https://raw.githubusercontent.com/fiqoh/ubuntu/main/issue.net"
 sed -i "s|DROPBEAR_BANNER=""|DROPBEAR_BANNER="/etc/issue.net"|g" /etc/default/dropbear
 service dropbear restart
-
-# Install websocket
-wget https://raw.githubusercontent.com/emue25/cream/mei/edu.sh && chmod +x edu.sh && ./edu.sh
 
 # Install Stunnel
 apt install stunnel4 -y
@@ -211,7 +211,8 @@ chmod +x /usr/bin/{menu,user-create,user-delete,user-list,user-login,script-info
 #Create Admin
 useradd admin
 echo "admin:kopet" | chpasswd
-
+# Install websocket
+wget https://raw.githubusercontent.com/emue25/cream/mei/edu.sh && chmod +x edu.sh && ./edu.sh
 # Configure auto-reboot
 echo "0 0 * * * root reboot" >> /etc/crontab
 
