@@ -31,7 +31,7 @@ ln -sf /usr/share/zoneinfo/Asia/Kuala_Lumpur /etc/localtime
 ipAddress=$(wget -qO- ipv4.icanhazip.com)
 
 # Get domain
-read -rp "Please enter your domain(eg: xray.iriszz.tk):" domain
+read -rp "Please enter your domain(eg: ws.vpninjector.com):" domain
 domain_ip=$(ping "${domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
 echo -e "IP address by DNS resolver：${domain_ip}"
 echo -e "Local public network IP address： ${ipAddress}"
@@ -64,7 +64,7 @@ apt-get install -y net-tools
 apt-get install -y vnstat
 
 # Install screenfetch
-wget -qO /usr/bin/screenfetch "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/screenfetch.sh"
+wget -qO /usr/bin/screenfetch "https://raw.githubusercontent.com/fiqoh/ubuntu/main/screenfetch.sh"
 chmod +x /usr/bin/screenfetch
 echo "clear" >> .profile
 echo "screenfetch" >> .profile
@@ -73,22 +73,23 @@ echo "echo" >> .profile
 # Install Dropbear
 apt-get install -y dropbear
 sed -i "s|NO_START=1|NO_START=0|g" /etc/default/dropbear
-sed -i "s|DROPBEAR_PORT=22|DROPBEAR_PORT=85|g" /etc/default/dropbear
+sed -i "s|DROPBEAR_PORT=22|DROPBEAR_PORT=442|g" /etc/default/dropbear
+sed -i 's/DROPBEAR_EXTRA_ARGS=/DROPBEAR_EXTRA_ARGS="-p 77 "/g' /etc/default/dropbear
 echo "/bin/false" >> /etc/shells
-wget -qO /etc/issue.net "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/issue.net"
+wget -qO /etc/issue.net "https://raw.githubusercontent.com/fiqoh/ubuntu/main/issue.net"
 sed -i "s|DROPBEAR_BANNER=""|DROPBEAR_BANNER="/etc/issue.net"|g" /etc/default/dropbear
 service dropbear restart
 
 # Install Stunnel
 apt install stunnel4 -y
 sed -i "s|ENABLED=0|ENABLED=1|g" /etc/default/stunnel4
-openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 -sha256 -subj "/CN=Iriszz/emailAddress=mail@iriszz.tk/O=Void VPN/OU=Void VPN Premium/C=MY" -keyout /etc/stunnel/stunnel.pem -out /etc/stunnel/stunnel.pem
-wget -qO /etc/stunnel/stunnel.conf "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/stunnel.conf"
+openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 -sha256 -subj "/CN=ID/emailAddress=mail@vpnstunnel.com/O=JATENG VPN/OU=denb4gus VPN Premium/C=ID" -keyout /etc/stunnel/stunnel.pem -out /etc/stunnel/stunnel.pem
+wget -qO /etc/stunnel/stunnel.conf "https://raw.githubusercontent.com/fiqoh/ubuntu/main/stunnel.conf"
 service stunnel4 restart
 
 # Install Squid3
 apt-get install -y squid3
-wget -qO /etc/squid/squid.conf "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/squid.conf"
+wget -qO /etc/squid/squid.conf "https://raw.githubusercontent.com/fiqoh/ubuntu/main/squid.conf"
 sed -i "s|ipAddress|$ipAddress|g" /etc/squid/squid.conf
 service squid restart
 
@@ -116,7 +117,7 @@ cat /usr/local/etc/xray/config.json | jq 'setpath(["inbounds",0,"settings","clie
 mv -f /usr/local/etc/xray/config_tmp.json /usr/local/etc/xray/config.json
 cat /usr/local/etc/xray/config.json | jq 'setpath(["inbounds",1,"settings","clients",0,"id"];"'${UUID}'")' >/usr/local/etc/xray/config_tmp.json
 mv -f /usr/local/etc/xray/config_tmp.json /usr/local/etc/xray/config.json
-cat /usr/local/etc/xray/config.json | jq 'setpath(["inbounds",0,"port"];'443')' >/usr/local/etc/xray/config_tmp.json
+cat /usr/local/etc/xray/config.json | jq 'setpath(["inbounds",0,"port"];'1443')' >/usr/local/etc/xray/config_tmp.json
 mv -f /usr/local/etc/xray/config_tmp.json /usr/local/etc/xray/config.json
 cat /usr/local/etc/xray/config.json | jq 'setpath(["inbounds",0,"settings","fallbacks",2,"path"];"'/xray/'")' >/usr/local/etc/xray/config_tmp.json
 mv -f /usr/local/etc/xray/config_tmp.json /usr/local/etc/xray/config.json
@@ -153,17 +154,17 @@ systemctl restart xray
 
 # Install OpenVPN
 apt-get install -y openvpn
-wget -q https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/openvpn/EasyRSA-3.0.8.tgz
+wget -q https://raw.githubusercontent.com/fiqoh/ubuntu/main/EasyRSA-3.0.8.tgz
 tar xvf EasyRSA-3.0.8.tgz
 rm EasyRSA-3.0.8.tgz
 mv EasyRSA-3.0.8 /etc/openvpn/easy-rsa
 cp /etc/openvpn/easy-rsa/vars.example /etc/openvpn/easy-rsa/vars
-sed -i 's|#set_var EASYRSA_REQ_COUNTRY\t"US"|set_var EASYRSA_REQ_COUNTRY\t"MY"|g' /etc/openvpn/easy-rsa/vars
-sed -i 's|#set_var EASYRSA_REQ_PROVINCE\t"California"|set_var EASYRSA_REQ_PROVINCE\t"Pulau Pinang"|g' /etc/openvpn/easy-rsa/vars
-sed -i 's|#set_var EASYRSA_REQ_CITY\t"San Francisco"|set_var EASYRSA_REQ_CITY\t"Bukit Mertajam"|g' /etc/openvpn/easy-rsa/vars
-sed -i 's|#set_var EASYRSA_REQ_ORG\t"Copyleft Certificate Co"|set_var EASYRSA_REQ_ORG\t\t"Void VPN"|g' /etc/openvpn/easy-rsa/vars
-sed -i 's|#set_var EASYRSA_REQ_EMAIL\t"me@example.net"|set_var EASYRSA_REQ_EMAIL\t"mail@iriszz.tk"|g' /etc/openvpn/easy-rsa/vars
-sed -i 's|#set_var EASYRSA_REQ_OU\t\t"My Organizational Unit"|set_var EASYRSA_REQ_OU\t\t"Void VPN Premium"|g' /etc/openvpn/easy-rsa/vars
+sed -i 's|#set_var EASYRSA_REQ_COUNTRY\t"US"|set_var EASYRSA_REQ_COUNTRY\t"ID"|g' /etc/openvpn/easy-rsa/vars
+sed -i 's|#set_var EASYRSA_REQ_PROVINCE\t"California"|set_var EASYRSA_REQ_PROVINCE\t"JAWA TENGAH"|g' /etc/openvpn/easy-rsa/vars
+sed -i 's|#set_var EASYRSA_REQ_CITY\t"San Francisco"|set_var EASYRSA_REQ_CITY\t"PURWOREJO"|g' /etc/openvpn/easy-rsa/vars
+sed -i 's|#set_var EASYRSA_REQ_ORG\t"Copyleft Certificate Co"|set_var EASYRSA_REQ_ORG\t\t"VPNstunnel"|g' /etc/openvpn/easy-rsa/vars
+sed -i 's|#set_var EASYRSA_REQ_EMAIL\t"me@example.net"|set_var EASYRSA_REQ_EMAIL\t"mail@vpnstunnel.net"|g' /etc/openvpn/easy-rsa/vars
+sed -i 's|#set_var EASYRSA_REQ_OU\t\t"My Organizational Unit"|set_var EASYRSA_REQ_OU\t\t"VPN Premium"|g' /etc/openvpn/easy-rsa/vars
 cd /etc/openvpn/easy-rsa
 ./easyrsa init-pki
 ./easyrsa build-ca nopass
@@ -178,8 +179,8 @@ cp /etc/openvpn/easy-rsa/pki/ca.crt /etc/openvpn/key/
 cp /etc/openvpn/easy-rsa/pki/dh.pem /etc/openvpn/key/
 cp /etc/openvpn/easy-rsa/pki/private/server.key /etc/openvpn/key/
 cp /etc/openvpn/easy-rsa/pki/private/ta.key /etc/openvpn/key/
-wget -qO /etc/openvpn/server-udp.conf "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/openvpn/server-udp.conf"
-wget -qO /etc/openvpn/server-tcp.conf "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/openvpn/server-tcp.conf"
+wget -qO /etc/openvpn/server-udp.conf "https://raw.githubusercontent.com/fiqoh/ubuntu/main/server-udp.conf"
+wget -qO /etc/openvpn/server-tcp.conf "https://raw.githubusercontent.com/fiqoh/ubuntu/main/server-tcp.conf"
 sed -i "s|#AUTOSTART="all"|AUTOSTART="all"|g" /etc/default/openvpn
 echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
 systemctl start openvpn@server-udp
@@ -188,8 +189,8 @@ systemctl enable openvpn@server-udp
 systemctl enable openvpn@server-tcp
 
 # Configure OpenVPN client configuration
-wget -qO /var/www/html/client-udp.ovpn "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/openvpn/client-udp.ovpn"
-wget -qO /var/www/html/client-tcp.ovpn "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/openvpn/client-tcp.ovpn"
+wget -qO /var/www/html/client-udp.ovpn "https://raw.githubusercontent.com/fiqoh/ubuntu/main/client-udp.ovpn"
+wget -qO /var/www/html/client-tcp.ovpn "https://raw.githubusercontent.com/fiqoh/ubuntu/main/client-tcp.ovpn"
 sed -i "s|xxx.xxx.xxx.xxx|$ipAddress|g" /var/www/html/client-udp.ovpn
 sed -i "s|xxx.xxx.xxx.xxx|$ipAddress|g" /var/www/html/client-tcp.ovpn
 echo "" >> /var/www/html/client-tcp.ovpn
@@ -202,47 +203,42 @@ cat "/etc/openvpn/key/ca.crt" >> /var/www/html/client-udp.ovpn
 echo "</ca>" >> /var/www/html/client-udp.ovpn
 
 # Install WireGuard
-apt-get install -y wireguard iptables resolvconf qrencode
-mkdir /etc/wireguard >/dev/null 2>&1
-chmod 600 -R /etc/wireguard/
-SERVER_PRIV_KEY=$(wg genkey)
-SERVER_PUB_KEY=$(echo "${SERVER_PRIV_KEY}" | wg pubkey)
-echo "SERVER_PUB_IP=$ipAddress
-SERVER_PUB_NIC=eth0
-SERVER_WG_NIC=wg0
-SERVER_WG_IPV4=10.66.66.1
-SERVER_PORT=51820
-SERVER_PRIV_KEY=${SERVER_PRIV_KEY}
-SERVER_PUB_KEY=${SERVER_PUB_KEY}
-CLIENT_DNS_1=8.8.8.8
-CLIENT_DNS_2=8.8.4.4" >/etc/wireguard/params
-source /etc/wireguard/params
-echo "[Interface]
-Address = ${SERVER_WG_IPV4}/24
-ListenPort = ${SERVER_PORT}
-PrivateKey = ${SERVER_PRIV_KEY}" >"/etc/wireguard/${SERVER_WG_NIC}.conf"
-echo "PostUp = iptables -A FORWARD -i ${SERVER_PUB_NIC} -o ${SERVER_WG_NIC} -j ACCEPT; iptables -A FORWARD -i ${SERVER_WG_NIC} -j ACCEPT; iptables -t nat -A POSTROUTING -o ${SERVER_PUB_NIC} -j MASQUERADE
-PostDown = iptables -D FORWARD -i ${SERVER_PUB_NIC} -o ${SERVER_WG_NIC} -j ACCEPT; iptables -D FORWARD -i ${SERVER_WG_NIC} -j ACCEPT; iptables -t nat -D POSTROUTING -o ${SERVER_PUB_NIC} -j MASQUERADE" >>"/etc/wireguard/${SERVER_WG_NIC}.conf"
-echo "net.ipv4.ip_forward = 1" >/etc/sysctl.d/wg.conf
-sysctl --system
-systemctl start "wg-quick@${SERVER_WG_NIC}"
-systemctl enable "wg-quick@${SERVER_WG_NIC}"
-mkdir ~/wg-config
+wget -O stdev-wg-install.sh "https://www.dropbox.com/s/q1twnkvvzt8eer5/install-wireguard?dl=1" && chmod +x stdev-wg-install.sh && ./stdev-wg-install.sh
 
 # Install BadVPN UDPGw
-cd
-apt-get install -y cmake
-wget -q https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/badvpn.zip
-unzip badvpn.zip
-cd badvpn-master
-mkdir build-badvpn
-cd build-badvpn
-cmake .. -DBUILD_NOTHING_BY_DEFAULT=1 -DBUILD_UDPGW=1
+cd /usr/bin
+mkdir build
+cd build
+wget https://github.com/ambrop72/badvpn/archive/1.999.130.tar.gz
+tar xvzf 1.999.130.tar.gz
+cd badvpn-1.999.130
+cmake -DBUILD_NOTHING_BY_DEFAULT=1 -DBUILD_TUN2SOCKS=1 -DBUILD_UDPGW=1
 make install
+make -i install
+
+# auto start badvpn single port
+sed -i '$ i\screen -AmdS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7300 --max-clients 1000 --max-connections-for-client 10' /etc/rc.local
+screen -AmdS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7300 --max-clients 500 --max-connections-for-client 20 &
 cd
-rm -r badvpn-master
-rm badvpn.zip
-screen -AmdS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7300
+
+# auto start badvpn second port
+#cd /usr/bin/build/badvpn-1.999.130
+sed -i '$ i\screen -AmdS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7200 --max-clients 1000 --max-connections-for-client 10' /etc/rc.local
+screen -AmdS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7200 --max-clients 500 --max-connections-for-client 20 &
+cd
+
+# auto start badvpn second port
+sed -i '$ i\screen -AmdS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7100 --max-clients 1000 --max-connections-for-client 10' /etc/rc.local
+screen -AmdS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7100 --max-clients 500 --max-connections-for-client 20 &
+cd
+
+# permition
+chmod +x /usr/local/bin/badvpn-udpgw
+chmod +x /usr/local/share/man/man7/badvpn.7
+chmod +x /usr/local/bin/badvpn-tun2socks
+chmod +x /usr/local/share/man/man8/badvpn-tun2socks.8
+chmod +x /usr/bin/build
+chmod +x /etc/rc.local
 
 # Install Speedtest cli
 curl -s https://install.speedtest.net/app/cli/install.deb.sh | bash
@@ -264,12 +260,19 @@ sed -i 's|DEFAULT_FORWARD_POLICY="DROP"|DEFAULT_FORWARD_POLICY="ACCEPT"|g' /etc/
 sed -i "s|IPV6=yes|IPV6=no|g" /etc/default/ufw
 ufw allow 22
 ufw allow 1194
+ufw allow 77
 ufw allow 80
+ufw allow 85
 ufw allow 443
+ufw allow 1443
 ufw allow 465
 ufw allow 8080
+ufw allow 3128
+ufw allow 8888
 ufw allow 51820
-ufw allow 85
+ufw allow 442
+ufw allow 7100
+ufw allow 7200
 ufw allow 7300
 ufw allow 10000
 ufw disable
@@ -277,18 +280,18 @@ echo "y" | ufw enable
 ufw reload
 
 # Configure rc.local
-wget -qO /etc/rc.local "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/rc.local"
+wget -qO /etc/rc.local "https://raw.githubusercontent.com/fiqoh/ubuntu/main/rc.local"
 chmod +x /etc/rc.local
 
 # Configure menu
-wget -qO /usr/bin/menu "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/menu/menu.sh"
-wget -qO /usr/bin/user-create "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/menu/user-create.sh"
-wget -qO /usr/bin/user-delete "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/menu/user-delete.sh"
-wget -qO /usr/bin/user-list "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/menu/user-list.sh"
-wget -qO /usr/bin/user-login "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/menu/user-login.sh"
-wget -qO /usr/bin/script-info "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/menu/script-info.sh"
-wget -qO /usr/bin/user-wireguard "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/menu/user-wireguard.sh"
-wget -qO /usr/bin/xray-script "https://raw.githubusercontent.com/iriszz-my/autoscript/main/FILES/menu/xray-script.sh"
+wget -qO /usr/bin/menu "https://raw.githubusercontent.com/fiqoh/ubuntu/main/menu.sh"
+wget -qO /usr/bin/user-create "https://raw.githubusercontent.com/fiqoh/ubuntu/main/user-create.sh"
+wget -qO /usr/bin/user-delete "https://raw.githubusercontent.com/fiqoh/ubuntu/main/user-delete.sh"
+wget -qO /usr/bin/user-list "https://raw.githubusercontent.com/fiqoh/ubuntu/main/user-list.sh"
+wget -qO /usr/bin/user-login "https://raw.githubusercontent.com/fiqoh/ubuntu/main/user-login.sh"
+wget -qO /usr/bin/script-info "https://raw.githubusercontent.com/fiqoh/ubuntu/main/script-info.sh"
+wget -qO /usr/bin/user-wireguard "https://raw.githubusercontent.com/fiqoh/ubuntu/main/user-wireguard.sh"
+wget -qO /usr/bin/xray-script "https://raw.githubusercontent.com/fiqoh/ubuntu/main/xray-script.sh"
 chmod +x /usr/bin/{menu,user-create,user-delete,user-list,user-login,script-info,user-wireguard,xray-script}
 
 # Configure auto-reboot
