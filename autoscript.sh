@@ -348,7 +348,7 @@ echo "OVPN Config:"
 echo "http://$ipAddress/client-udp.ovpn"
 echo "http://$ipAddress/client-tcp.ovpn"
 echo ""
-echo "Telegram: @Iriszz"
+echo "Telegram: @VPNstunnel"
 echo ""
 
 # Cleanup and reboot
