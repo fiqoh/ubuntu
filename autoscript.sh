@@ -30,30 +30,6 @@ ln -sf /usr/share/zoneinfo/Asia/Kuala_Lumpur /etc/localtime
 # Initialize variable
 ipAddress=$(wget -qO- ipv4.icanhazip.com)
 
-# Get domain
-read -rp "Please enter your domain(eg: ws.vpninjector.com):" domain
-domain_ip=$(ping "${domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
-echo -e "IP address by DNS resolver：${domain_ip}"
-echo -e "Local public network IP address： ${ipAddress}"
-sleep 2
-if [[ ${domain_ip} == "${ipAddress}" ]]; then
-	echo -e "The IP address by DNS resolver matches the local public network IP address."
-	sleep 2
-else
-	print_error "Please make sure that the correct A record is added to the domain name, otherwise you will not be able to use xray normally."
-	print_error "The IP address of the domain name resolved by DNS does not match the IP address of the machine. Do you want to continue the installation? (Y/n)" && read -r install
-	case $install in
-	[yY][eE][sS] | [yY])
-		echo -e "Continue to install."
-		sleep 2
-		;;
-		*)
-		echo -e "Installation terminated."
-		exit 2
-		;;
-	esac
-fi
-
 # Go to root directory
 cd
 
@@ -110,51 +86,6 @@ service webmin restart
 apt-get install -y fail2ban
 service fail2ban restart
 
-# Install Xray (Modded Script by Wulabing)
-apt install -y lsb-release gnupg2 wget lsof tar unzip curl libpcre3 libpcre3-dev zlib1g-dev openssl libssl-dev jq nginx
-curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh | bash -s -- install
-echo $domain >/usr/local/etc/xray/domain
-wget -O /usr/local/etc/xray/config.json hhttps://raw.githubusercontent.com/fiqoh/ubuntu/main/xray_tls_ws_mix-rprx-direct.json
-[ -z "$UUID" ] && UUID=$(cat /proc/sys/kernel/random/uuid)
-cat /usr/local/etc/xray/config.json | jq 'setpath(["inbounds",0,"settings","clients",0,"id"];"'${UUID}'")' >/usr/local/etc/xray/config_tmp.json
-mv -f /usr/local/etc/xray/config_tmp.json /usr/local/etc/xray/config.json
-cat /usr/local/etc/xray/config.json | jq 'setpath(["inbounds",1,"settings","clients",0,"id"];"'${UUID}'")' >/usr/local/etc/xray/config_tmp.json
-mv -f /usr/local/etc/xray/config_tmp.json /usr/local/etc/xray/config.json
-cat /usr/local/etc/xray/config.json | jq 'setpath(["inbounds",0,"port"];'1443')' >/usr/local/etc/xray/config_tmp.json
-mv -f /usr/local/etc/xray/config_tmp.json /usr/local/etc/xray/config.json
-cat /usr/local/etc/xray/config.json | jq 'setpath(["inbounds",0,"settings","fallbacks",2,"path"];"'/xray/'")' >/usr/local/etc/xray/config_tmp.json
-mv -f /usr/local/etc/xray/config_tmp.json /usr/local/etc/xray/config.json
-cat /usr/local/etc/xray/config.json | jq 'setpath(["inbounds",1,"streamSettings","wsSettings","path"];"'/xray/'")' >/usr/local/etc/xray/config_tmp.json
-mv -f /usr/local/etc/xray/config_tmp.json /usr/local/etc/xray/config.json
-wget -O /etc/nginx/conf.d/${domain}.conf https://raw.githubusercontent.com/fiqoh/ubuntu/main/web.conf
-sed -i "s/xxx/${domain}/g" /etc/nginx/conf.d/${domain}.conf
-systemctl restart nginx
-mkdir -p /www/xray_web
-wget -O web.tar.gz https://raw.githubusercontent.com/fiqoh/ubuntu/main/web.tar.gz
-tar xzf web.tar.gz -C /www/xray_web
-rm -f web.tar.gz
-signedcert=$(xray tls cert -domain="$ipAddress" -name="$ipAddress" -org="$ipAddress" -expire=87600h)
-echo $signedcert | jq '.certificate[]' | sed 's/\"//g' | tee /usr/local/etc/xray/self_signed_cert.pem
-echo $signedcert | jq '.key[]' | sed 's/\"//g' >/usr/local/etc/xray/self_signed_key.pem
-openssl x509 -in /usr/local/etc/xray/self_signed_cert.pem -noout
-chown nobody.nogroup /usr/local/etc/xray/self_signed_cert.pem
-chown nobody.nogroup /usr/local/etc/xray/self_signed_key.pem
-mkdir /ssl
-cp -a /usr/local/etc/xray/self_signed_cert.pem /ssl/xray.crt
-cp -a /usr/local/etc/xray/self_signed_key.pem /ssl/xray.key
-curl -L get.acme.sh | bash
-"$HOME"/.acme.sh/acme.sh --set-default-ca --server letsencrypt
-sed -i "6s/^/#/" "/etc/nginx/conf.d/${domain}.conf"
-sed -i "6a\\\troot /www/xray_web/;" "/etc/nginx/conf.d/${domain}.conf"
-systemctl restart nginx
-"$HOME"/.acme.sh/acme.sh --issue -d "${domain}" --webroot "/www/xray_web/" -k ec-256 --force
-"$HOME"/.acme.sh/acme.sh --installcert -d "${domain}" --fullchainpath /ssl/xray.crt --keypath /ssl/xray.key --reloadcmd "systemctl restart xray" --ecc --force
-sed -i "7d" /etc/nginx/conf.d/${domain}.conf
-sed -i "6s/#//" /etc/nginx/conf.d/${domain}.conf
-chown -R nobody.nogroup /ssl/*
-systemctl restart nginx
-systemctl restart xray
-
 # Install OpenVPN
 apt-get install -y openvpn
 wget -q https://raw.githubusercontent.com/fiqoh/ubuntu/main/EasyRSA-3.0.8.tgz
@@ -205,35 +136,6 @@ echo "<ca>" >> /var/www/html/client-udp.ovpn
 cat "/etc/openvpn/key/ca.crt" >> /var/www/html/client-udp.ovpn
 echo "</ca>" >> /var/www/html/client-udp.ovpn
 
-# Install WireGuard
-apt-get install -y wireguard iptables resolvconf qrencode
-mkdir /etc/wireguard >/dev/null 2>&1
-chmod 600 -R /etc/wireguard/
-SERVER_PRIV_KEY=$(wg genkey)
-SERVER_PUB_KEY=$(echo "${SERVER_PRIV_KEY}" | wg pubkey)
-echo "SERVER_PUB_IP=$ipAddress
-SERVER_PUB_NIC=eth0
-SERVER_WG_NIC=wg0
-SERVER_WG_IPV4=10.66.66.1
-SERVER_PORT=51820
-SERVER_PRIV_KEY=${SERVER_PRIV_KEY}
-SERVER_PUB_KEY=${SERVER_PUB_KEY}
-CLIENT_DNS_1=8.8.8.8
-CLIENT_DNS_2=8.8.4.4" >/etc/wireguard/params
-source /etc/wireguard/params
-echo "[Interface]
-Address = ${SERVER_WG_IPV4}/24
-ListenPort = ${SERVER_PORT}
-PrivateKey = ${SERVER_PRIV_KEY}" >"/etc/wireguard/${SERVER_WG_NIC}.conf"
-echo "PostUp = iptables -A FORWARD -i ${SERVER_PUB_NIC} -o ${SERVER_WG_NIC} -j ACCEPT; iptables -A FORWARD -i ${SERVER_WG_NIC} -j ACCEPT; iptables -t nat -A POSTROUTING -o ${SERVER_PUB_NIC} -j MASQUERADE
-PostDown = iptables -D FORWARD -i ${SERVER_PUB_NIC} -o ${SERVER_WG_NIC} -j ACCEPT; iptables -D FORWARD -i ${SERVER_WG_NIC} -j ACCEPT; iptables -t nat -D POSTROUTING -o ${SERVER_PUB_NIC} -j MASQUERADE" >>"/etc/wireguard/${SERVER_WG_NIC}.conf"
-echo "net.ipv4.ip_forward = 1" >/etc/sysctl.d/wg.conf
-sysctl --system
-systemctl start "wg-quick@${SERVER_WG_NIC}"
-systemctl enable "wg-quick@${SERVER_WG_NIC}"
-mkdir ~/wg-config
-
-
 # Install BadVPN UDPGw
 cd
 apt-get install -y cmake
@@ -248,6 +150,8 @@ cd
 rm -r badvpn-master
 rm badvpn.zip
 screen -AmdS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7300
+screen -AmdS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7400
+screen -AmdS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7500
 
 
 # Install Speedtest cli
