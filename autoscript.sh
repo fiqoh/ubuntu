@@ -206,7 +206,33 @@ cat "/etc/openvpn/key/ca.crt" >> /var/www/html/client-udp.ovpn
 echo "</ca>" >> /var/www/html/client-udp.ovpn
 
 # Install WireGuard
-wget -O stdev-wg-install.sh "https://www.dropbox.com/s/q1twnkvvzt8eer5/install-wireguard?dl=1" && chmod +x stdev-wg-install.sh && ./stdev-wg-install.sh
+apt-get install -y wireguard iptables resolvconf qrencode
+mkdir /etc/wireguard >/dev/null 2>&1
+chmod 600 -R /etc/wireguard/
+SERVER_PRIV_KEY=$(wg genkey)
+SERVER_PUB_KEY=$(echo "${SERVER_PRIV_KEY}" | wg pubkey)
+echo "SERVER_PUB_IP=$ipAddress
+SERVER_PUB_NIC=eth0
+SERVER_WG_NIC=wg0
+SERVER_WG_IPV4=10.66.66.1
+SERVER_PORT=51820
+SERVER_PRIV_KEY=${SERVER_PRIV_KEY}
+SERVER_PUB_KEY=${SERVER_PUB_KEY}
+CLIENT_DNS_1=8.8.8.8
+CLIENT_DNS_2=8.8.4.4" >/etc/wireguard/params
+source /etc/wireguard/params
+echo "[Interface]
+Address = ${SERVER_WG_IPV4}/24
+ListenPort = ${SERVER_PORT}
+PrivateKey = ${SERVER_PRIV_KEY}" >"/etc/wireguard/${SERVER_WG_NIC}.conf"
+echo "PostUp = iptables -A FORWARD -i ${SERVER_PUB_NIC} -o ${SERVER_WG_NIC} -j ACCEPT; iptables -A FORWARD -i ${SERVER_WG_NIC} -j ACCEPT; iptables -t nat -A POSTROUTING -o ${SERVER_PUB_NIC} -j MASQUERADE
+PostDown = iptables -D FORWARD -i ${SERVER_PUB_NIC} -o ${SERVER_WG_NIC} -j ACCEPT; iptables -D FORWARD -i ${SERVER_WG_NIC} -j ACCEPT; iptables -t nat -D POSTROUTING -o ${SERVER_PUB_NIC} -j MASQUERADE" >>"/etc/wireguard/${SERVER_WG_NIC}.conf"
+echo "net.ipv4.ip_forward = 1" >/etc/sysctl.d/wg.conf
+sysctl --system
+systemctl start "wg-quick@${SERVER_WG_NIC}"
+systemctl enable "wg-quick@${SERVER_WG_NIC}"
+mkdir ~/wg-config
+
 
 # Install BadVPN UDPGw
 cd
