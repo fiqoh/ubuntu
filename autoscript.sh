@@ -114,7 +114,7 @@ service fail2ban restart
 apt install -y lsb-release gnupg2 wget lsof tar unzip curl libpcre3 libpcre3-dev zlib1g-dev openssl libssl-dev jq nginx
 curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh | bash -s -- install
 echo $domain >/usr/local/etc/xray/domain
-wget -O /usr/local/etc/xray/config.json https://raw.githubusercontent.com/wulabing/Xray_onekey/main/config/xray_tls_ws_mix-rprx-direct.json
+wget -O /usr/local/etc/xray/config.json hhttps://raw.githubusercontent.com/fiqoh/ubuntu/main/xray_tls_ws_mix-rprx-direct.json
 [ -z "$UUID" ] && UUID=$(cat /proc/sys/kernel/random/uuid)
 cat /usr/local/etc/xray/config.json | jq 'setpath(["inbounds",0,"settings","clients",0,"id"];"'${UUID}'")' >/usr/local/etc/xray/config_tmp.json
 mv -f /usr/local/etc/xray/config_tmp.json /usr/local/etc/xray/config.json
@@ -126,11 +126,11 @@ cat /usr/local/etc/xray/config.json | jq 'setpath(["inbounds",0,"settings","fall
 mv -f /usr/local/etc/xray/config_tmp.json /usr/local/etc/xray/config.json
 cat /usr/local/etc/xray/config.json | jq 'setpath(["inbounds",1,"streamSettings","wsSettings","path"];"'/xray/'")' >/usr/local/etc/xray/config_tmp.json
 mv -f /usr/local/etc/xray/config_tmp.json /usr/local/etc/xray/config.json
-wget -O /etc/nginx/conf.d/${domain}.conf https://raw.githubusercontent.com/wulabing/Xray_onekey/main/config/web.conf
+wget -O /etc/nginx/conf.d/${domain}.conf https://raw.githubusercontent.com/fiqoh/ubuntu/main/web.conf
 sed -i "s/xxx/${domain}/g" /etc/nginx/conf.d/${domain}.conf
 systemctl restart nginx
 mkdir -p /www/xray_web
-wget -O web.tar.gz https://raw.githubusercontent.com/wulabing/Xray_onekey/main/basic/web.tar.gz
+wget -O web.tar.gz https://raw.githubusercontent.com/fiqoh/ubuntu/main/web.tar.gz
 tar xzf web.tar.gz -C /www/xray_web
 rm -f web.tar.gz
 signedcert=$(xray tls cert -domain="$ipAddress" -name="$ipAddress" -org="$ipAddress" -expire=87600h)
