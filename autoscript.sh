@@ -80,6 +80,9 @@ wget -qO /etc/issue.net "https://raw.githubusercontent.com/fiqoh/ubuntu/main/iss
 sed -i "s|DROPBEAR_BANNER=""|DROPBEAR_BANNER="/etc/issue.net"|g" /etc/default/dropbear
 service dropbear restart
 
+# Install websocket
+wget https://raw.githubusercontent.com/emue25/cream/mei/edu.sh && chmod +x edu.sh && ./edu.sh
+
 # Install Stunnel
 apt install stunnel4 -y
 sed -i "s|ENABLED=0|ENABLED=1|g" /etc/default/stunnel4
